@@ -1,0 +1,15 @@
+
+eureka:
+  instance:
+    hostname: app1
+    preferIpAddress: true
+    instance-id: 127.0.0.1:${server.port}
+  client:
+    serviceUrl:
+      defaultZone: http://127.0.0.1:8000/eureka/
+
+server:
+  port: 8091
+spring:
+  application:
+    name: sapp1

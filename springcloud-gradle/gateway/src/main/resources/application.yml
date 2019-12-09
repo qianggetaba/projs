@@ -1,0 +1,30 @@
+
+eureka:
+  instance:
+    hostname: gateway
+    preferIpAddress: true
+    instance-id: 127.0.0.1:${server.port}
+  client:
+    serviceUrl:
+      defaultZone: http://127.0.0.1:8000/eureka/
+
+server:
+  port: 9000
+spring:
+  application:
+    name: sgateway
+  cloud:
+    gateway:
+      routes:
+      - id: sapp1
+        uri: lb://sapp1
+        predicates:
+        - Path= /papp1/**
+        filters:
+        - StripPrefix= 1 # 删除url的第一间隔，就是去掉/papp1，把后面的url转发为微服务
+      - id: sapp2
+        uri: lb://sapp2
+        predicates:
+        - Path= /papp2/**
+        filters:
+        - StripPrefix= 1
