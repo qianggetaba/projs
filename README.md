@@ -10,3 +10,9 @@ gradle多模块项目，springcloud Greenwich.SR4, 基于spring 5，看看spring
 
 # javautiler
 总结的java小程序
+
+# springLittleBoot
+模拟springboot，只使用embedded tomcat启动spring mvc,自定义servlet
+
+# scatter
+零散的文件，代码
