@@ -1,0 +1,91 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>gitbook css style test page</title>
+</head>
+<body>
+
+基于gitbook样式的网页样式测试文件<br/><br/>
+
+
+original style:
+<h1>h1</h1>
+<h2>h2</h2>
+<h3>h3</h3>
+<h4>h4</h4>
+<h5>h5</h5>
+<h6>h6</h6>
+normal text
+
+<p>       paragraph text     <strong>strong     text    </strong><a href="#"> a     link      </a>
+<code>test@test.com</code>
+
+</p>
+<blockquote>quote etsttst  stst sts ts </blockquote>
+<ul>
+    <li>111</li>
+    <li>222</li>
+    <li>333</li>
+</ul>
+<pre>
+    fsdfasdf
+    sadfasf                  ddd
+    sfdsfsfsfs
+</pre>
+
+change style:
+<style type="text/css">
+.change > a:link,a:visited{
+ text-decoration:none;  /*超链接无下划线*/
+}
+.change > a:hover{
+ text-decoration:underline;  /*鼠标放上去有下划线*/
+}
+.change > code {
+    padding: .2em;
+    margin: 0;
+    font-size: .85em;
+    background-color: #f0f0f0;
+}
+blockquote.change{
+    margin: 0;
+    margin-bottom: .85em;
+    padding: 0 15px;
+    color: #858585;
+    border-left: 4px solid #e5e5e5;
+}
+pre.change{
+    display: block;
+    overflow: auto;
+    word-wrap: normal;
+    margin: 0;
+    padding: 0em 0.4em;
+    margin-bottom: 1.275em;
+    background: #f0f0f0;
+    white-space: pre-line;
+    font-family: Consolas,"Liberation Mono",Menlo,Courier,monospace;
+}
+</style>
+<p class="change">
+
+    <a> a     link      </a>
+
+    <code>test@test.com</code>
+</p>
+
+<blockquote class="change">quote etsttst  stst sts ts </blockquote>
+<ul class="change">
+    <li>111</li>
+    <li>222</li>
+    <li>333</li>
+</ul>
+<pre class="change">
+    fsdfasdf
+    sadfasf                  ddd
+    sfdsfsfsfs
+</pre>
+
+
+
+</body>
+</html>
