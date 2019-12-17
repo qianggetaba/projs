@@ -35,6 +35,12 @@
             <artifactId>netty-all</artifactId>
             <version>4.1.6.Final</version>
         </dependency>
+<!--        netty log: io.netty.util.internal.PlatformDependent Javassist: available -->
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.12.1.GA</version>
+        </dependency>
     </dependencies>
 
 </project>
