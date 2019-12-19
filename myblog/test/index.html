@@ -11,7 +11,51 @@
     <title>Hello, world!</title>
   </head>
   <body>
-    <h1>Hello, world!</h1>
+
+    <div class="container-fluid">
+      <div class="row">
+        <!-- left nav -->
+        <div class="col-3">
+          <div class="sidebar" style="border-right: 1px solid rgba(0,0,0,.1);">
+            <div style="padding: 1rem 15px;"> <input type="search" class="form-control ds-input" placeholder="Search..."></div>
+            
+            
+            <div>
+              <ul class="nav flex-column">
+                <li class="nav-item">
+                  <a class="nav-link active" href="#">Active</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#">Link</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#">Link</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <!-- right content -->
+        <div class="col">
+          <section>
+
+            <h1 id="kernel-booting-process-part-4">Kernel booting process. Part 4.</h1>
+<h2 id="the-transition-to-64-bit-mode">The Transition to 64-bit mode</h2>
+<p class="comments-section">This is the fourth part of the <code>Kernel booting process</code>. Here, we will learn about the first steps taken in <a href="http://en.wikipedia.org/wiki/Protected_mode" target="_blank">protected mode</a>, like checking if the CPU supports <a href="http://en.wikipedia.org/wiki/Long_mode" target="_blank">long mode</a> and <a href="http://en.wikipedia.org/wiki/Streaming_SIMD_Extensions" target="_blank">SSE</a>. We will initialize the page tables with <a href="http://en.wikipedia.org/wiki/Paging" target="_blank">paging</a> and, at the end, transition the CPU to <a href="https://en.wikipedia.org/wiki/Long_mode" target="_blank">long mode</a>.<div class="comments-icon"></div></p>
+<p class="comments-section"><strong>NOTE: there will be lots of assembly code in this part, so if you are not familiar with that, you might want to consult a book about it</strong><div class="comments-icon"></div></p>
+<p class="comments-section">In the previous <a href="https://github.com/0xAX/linux-insides/blob/v4.16/Booting/linux-bootstrap-3.md" target="_blank">part</a> we stopped at the jump to the <code>32-bit</code> entry point in <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/pmjump.S" target="_blank">arch/x86/boot/pmjump.S</a>:<div class="comments-icon"></div></p>
+<pre id="test" style="width: 400px;"><code class="lang-assembly">pacstrap /mnt base # to init disk system, like /bin/bash, other arch-chroot error and cannot pacman -Sw download only
+
+</code></pre>
+
+          </section>
+        </div>
+      </div>
+    </div>
+
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
