@@ -41,19 +41,19 @@ pre{
 </style>
 
 
-    <section class="normal markdown-section">
+<section class="normal markdown-section">
                                 
-        <h1 id="kernel-booting-process-part-4">Kernel booting process. Part 4.</h1>
+<h1 id="kernel-booting-process-part-4">Kernel booting process. Part 4.</h1>
 <h2 id="the-transition-to-64-bit-mode">The Transition to 64-bit mode</h2>
-<p class="comments-section">This is the fourth part of the <code>Kernel booting process</code>. Here, we will learn about the first steps taken in <a href="http://en.wikipedia.org/wiki/Protected_mode" target="_blank">protected mode</a>, like checking if the CPU supports <a href="http://en.wikipedia.org/wiki/Long_mode" target="_blank">long mode</a> and <a href="http://en.wikipedia.org/wiki/Streaming_SIMD_Extensions" target="_blank">SSE</a>. We will initialize the page tables with <a href="http://en.wikipedia.org/wiki/Paging" target="_blank">paging</a> and, at the end, transition the CPU to <a href="https://en.wikipedia.org/wiki/Long_mode" target="_blank">long mode</a>.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section"><strong>NOTE: there will be lots of assembly code in this part, so if you are not familiar with that, you might want to consult a book about it</strong><div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">In the previous <a href="https://github.com/0xAX/linux-insides/blob/v4.16/Booting/linux-bootstrap-3.md" target="_blank">part</a> we stopped at the jump to the <code>32-bit</code> entry point in <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/pmjump.S" target="_blank">arch/x86/boot/pmjump.S</a>:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">This is the fourth part of the <code>Kernel booting process</code>. Here, we will learn about the first steps taken in <a href="http://en.wikipedia.org/wiki/Protected_mode" target="_blank">protected mode</a>, like checking if the CPU supports <a href="http://en.wikipedia.org/wiki/Long_mode" target="_blank">long mode</a> and <a href="http://en.wikipedia.org/wiki/Streaming_SIMD_Extensions" target="_blank">SSE</a>. We will initialize the page tables with <a href="http://en.wikipedia.org/wiki/Paging" target="_blank">paging</a> and, at the end, transition the CPU to <a href="https://en.wikipedia.org/wiki/Long_mode" target="_blank">long mode</a>.<div class="comments-icon"></div></p>
+<p class="comments-section"><strong>NOTE: there will be lots of assembly code in this part, so if you are not familiar with that, you might want to consult a book about it</strong><div class="comments-icon"></div></p>
+<p class="comments-section">In the previous <a href="https://github.com/0xAX/linux-insides/blob/v4.16/Booting/linux-bootstrap-3.md" target="_blank">part</a> we stopped at the jump to the <code>32-bit</code> entry point in <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/pmjump.S" target="_blank">arch/x86/boot/pmjump.S</a>:<div class="comments-icon"></div></p>
 <pre id="test" style="width: 400px;"><code class="lang-assembly">pacstrap /mnt base # to init disk system, like /bin/bash, other arch-chroot error and cannot pacman -Sw download only
 
 </code></pre>
-<p class="comments-section">You will recall that the <code>eax</code> register contains the address of the 32-bit entry point. We can read about this in the <a href="https://www.kernel.org/doc/Documentation/x86/boot.txt" target="_blank">linux kernel x86 boot protocol</a>:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">You will recall that the <code>eax</code> register contains the address of the 32-bit entry point. We can read about this in the <a href="https://www.kernel.org/doc/Documentation/x86/boot.txt" target="_blank">linux kernel x86 boot protocol</a>:<div class="comments-icon"></div></p>
 <pre><code>When using bzImage, the protected-mode kernel was relocated to 0x100000
-</code></pre><p class="comments-section">Let's make sure that this is so by looking at the register values at the 32-bit entry point:<div class="comments-icon"><div class="marker">+</div></div></p>
+</code></pre><p class="comments-section">Let's make sure that this is so by looking at the register values at the 32-bit entry point:<div class="comments-icon"></div></p>
 <pre><code>eax            0x100000    1048576
 ecx            0x0        0
 edx            0x0        0
@@ -70,10 +70,10 @@ ds             0x18    24
 es             0x18    24
 fs             0x18    24
 gs             0x18    24
-</code></pre><p class="comments-section">We can see here that the <code>cs</code> register contains a value of <code>0x10</code> (as you maight recall from the <a href="https://github.com/0xAX/linux-insides/blob/v4.16/Booting/linux-bootstrap-3.md" target="_blank">previous part</a>, this is the second index in the <code>Global Descriptor Table</code>), the <code>eip</code> register contains the value <code>0x100000</code> and the base address of all segments including the code segment are zero.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">So, the physical address where the kernel is loaded would be <code>0:0x100000</code> or just <code>0x100000</code>, as specified by the boot protocol. Now let's start with the <code>32-bit</code> entry point.<div class="comments-icon"><div class="marker">+</div></div></p>
+</code></pre><p class="comments-section">We can see here that the <code>cs</code> register contains a value of <code>0x10</code> (as you maight recall from the <a href="https://github.com/0xAX/linux-insides/blob/v4.16/Booting/linux-bootstrap-3.md" target="_blank">previous part</a>, this is the second index in the <code>Global Descriptor Table</code>), the <code>eip</code> register contains the value <code>0x100000</code> and the base address of all segments including the code segment are zero.<div class="comments-icon"></div></p>
+<p class="comments-section">So, the physical address where the kernel is loaded would be <code>0:0x100000</code> or just <code>0x100000</code>, as specified by the boot protocol. Now let's start with the <code>32-bit</code> entry point.<div class="comments-icon"></div></p>
 <h2 id="the-32-bit-entry-point">The 32-bit entry point</h2>
-<p class="comments-section">The <code>32-bit</code> entry point is defined in the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/head_64.S" target="_blank">arch/x86/boot/compressed/head_64.S</a> assembly source code file:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">The <code>32-bit</code> entry point is defined in the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/head_64.S" target="_blank">arch/x86/boot/compressed/head_64.S</a> assembly source code file:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    __HEAD
 .code32
 ENTRY(startup_32)
@@ -82,19 +82,19 @@ ENTRY(startup_32)
 ....
 ENDPROC(startup_32)
 </code></pre>
-<p class="comments-section">First, why is the directory named <code>compressed</code>? The answer to that is that <code>bzimage</code> is a gzipped package consisting of <code>vmlinux</code>,   <code>header</code> and <code>kernel setup code</code>. We looked at kernel setup code in all of the previous parts. The main goal of the code in <code>head_64.S</code> is to prepare to enter long mode, enter it and then decompress the kernel. We will look at all of the steps leading to kernel decompression in this part.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">You will find two files in the <code>arch/x86/boot/compressed</code> directory:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">First, why is the directory named <code>compressed</code>? The answer to that is that <code>bzimage</code> is a gzipped package consisting of <code>vmlinux</code>,   <code>header</code> and <code>kernel setup code</code>. We looked at kernel setup code in all of the previous parts. The main goal of the code in <code>head_64.S</code> is to prepare to enter long mode, enter it and then decompress the kernel. We will look at all of the steps leading to kernel decompression in this part.<div class="comments-icon"></div></p>
+<p class="comments-section">You will find two files in the <code>arch/x86/boot/compressed</code> directory:<div class="comments-icon"></div></p>
 <ul>
 <li><a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/head_32.S" target="_blank">head_32.S</a></li>
 <li><a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/head_64.S" target="_blank">head_64.S</a></li>
 </ul>
-<p class="comments-section">but we will consider only the <code>head_64.S</code> source code file because, as you may remember, this book is only <code>x86_64</code> related; Let's look at <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/Makefile" target="_blank">arch/x86/boot/compressed/Makefile</a>. We can find the following <code>make</code> target here:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">but we will consider only the <code>head_64.S</code> source code file because, as you may remember, this book is only <code>x86_64</code> related; Let's look at <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/Makefile" target="_blank">arch/x86/boot/compressed/Makefile</a>. We can find the following <code>make</code> target here:<div class="comments-icon"></div></p>
 <pre><code class="lang-Makefile">vmlinux-objs-y := $(obj)/vmlinux.lds $(obj)/head_$(BITS).o $(obj)/misc.o \
 $(obj)/string.o $(obj)/cmdline.o \
 $(obj)/piggy.o $(obj)/cpuflags.o
 </code></pre>
-<p class="comments-section">The first line contains this- <code>$(obj)/head_$(BITS).o</code>.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">This means that we will select which file to link based on what <code>$(BITS)</code> is set to, either <code>head_32.o</code> or <code>head_64.o</code>. The <code>$(BITS)</code> variable is defined elsewhere in <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/Makefile" target="_blank">arch/x86/Makefile</a> based on the kernel configuration:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">The first line contains this- <code>$(obj)/head_$(BITS).o</code>.<div class="comments-icon"></div></p>
+<p class="comments-section">This means that we will select which file to link based on what <code>$(BITS)</code> is set to, either <code>head_32.o</code> or <code>head_64.o</code>. The <code>$(BITS)</code> variable is defined elsewhere in <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/Makefile" target="_blank">arch/x86/Makefile</a> based on the kernel configuration:<div class="comments-icon"></div></p>
 <pre><code class="lang-Makefile">ifeq ($(CONFIG_X86_32),y)
 BITS := 32
 ...
@@ -105,17 +105,17 @@ BITS := 64
 ...
 endif
 </code></pre>
-<p class="comments-section">Now that we know where to start, let's get to it.<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Now that we know where to start, let's get to it.<div class="comments-icon"></div></p>
 <h2 id="reload-the-segments-if-needed">Reload the segments if needed</h2>
-<p class="comments-section">As indicated above, we start in the <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/boot/compressed/head_64.S" target="_blank">arch/x86/boot/compressed/head_64.S</a> assembly source code file. We first see the definition of a special section attribute before the definition of the <code>startup_32</code> function:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">As indicated above, we start in the <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/boot/compressed/head_64.S" target="_blank">arch/x86/boot/compressed/head_64.S</a> assembly source code file. We first see the definition of a special section attribute before the definition of the <code>startup_32</code> function:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    __HEAD
 .code32
 ENTRY(startup_32)
 </code></pre>
-<p class="comments-section"><code>__HEAD</code> is a macro defined in the <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/include/linux/init.h" target="_blank">include/linux/init.h</a> header file and expands to the definition of the following section:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section"><code>__HEAD</code> is a macro defined in the <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/include/linux/init.h" target="_blank">include/linux/init.h</a> header file and expands to the definition of the following section:<div class="comments-icon"></div></p>
 <pre><code class="lang-C"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> __HEAD        .section    <span class="hljs-string">".head.text"</span>,<span class="hljs-string">"ax"</span></span>
 </code></pre>
-<p class="comments-section">Here, <code>.head.text</code> is the name of the section and <code>ax</code> is a set of flags. In our case, these flags show us that this section is <a href="https://en.wikipedia.org/wiki/Executable" target="_blank">executable</a> or in other words contains code. We can find the definition of this section in the <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/boot/compressed/vmlinux.lds.S" target="_blank">arch/x86/boot/compressed/vmlinux.lds.S</a> linker script:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Here, <code>.head.text</code> is the name of the section and <code>ax</code> is a set of flags. In our case, these flags show us that this section is <a href="https://en.wikipedia.org/wiki/Executable" target="_blank">executable</a> or in other words contains code. We can find the definition of this section in the <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/boot/compressed/vmlinux.lds.S" target="_blank">arch/x86/boot/compressed/vmlinux.lds.S</a> linker script:<div class="comments-icon"></div></p>
 <pre><code>SECTIONS
 {
 . = 0;
@@ -128,18 +128,18 @@ _ehead = . ;
 ...
 ...
 }
-</code></pre><p class="comments-section">If you are not familiar with the syntax of the <code>GNU LD</code> linker scripting language, you can find more information in its <a href="https://sourceware.org/binutils/docs/ld/Scripts.html#Scripts" target="_blank">documentation</a>. In short, the <code>.</code> symbol is a special linker variable, the location counter. The value assigned to it is an offset relative to the segment. In our case, we set the location counter to zero. This means that our code is linked to run from an offset of <code>0</code> in memory. This is also stated in the comments:<div class="comments-icon"><div class="marker">+</div></div></p>
+</code></pre><p class="comments-section">If you are not familiar with the syntax of the <code>GNU LD</code> linker scripting language, you can find more information in its <a href="https://sourceware.org/binutils/docs/ld/Scripts.html#Scripts" target="_blank">documentation</a>. In short, the <code>.</code> symbol is a special linker variable, the location counter. The value assigned to it is an offset relative to the segment. In our case, we set the location counter to zero. This means that our code is linked to run from an offset of <code>0</code> in memory. This is also stated in the comments:<div class="comments-icon"></div></p>
 <pre><code>Be careful parts of head_64.S assume startup_32 is at address 0.
-</code></pre><p class="comments-section">Now that we have our bearings, let's look at the contents of the <code>startup_32</code> function.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">In the beginning of the <code>startup_32</code> function, we can see the <code>cld</code> instruction which clears the <code>DF</code> bit in the <a href="https://en.wikipedia.org/wiki/FLAGS_register" target="_blank">flags</a> register. When the direction flag is clear, all string operations like <a href="http://x86.renejeschke.de/html/file_module_x86_id_306.html" target="_blank">stos</a>, <a href="http://x86.renejeschke.de/html/file_module_x86_id_287.html" target="_blank">scas</a> and others will increment the index registers <code>esi</code> or <code>edi</code>. We need to clear the direction flag because later we will use strings operations to perform various operations such as clearing space for page tables.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">After we have cleared the <code>DF</code> bit, the next step is to check the <code>KEEP_SEGMENTS</code> flag in the <code>loadflags</code> kernel setup header field. If you remember, we already talked about <code>loadflags</code> in the very first <a href="https://0xax.gitbooks.io/linux-insides/content/Booting/linux-bootstrap-1.html" target="_blank">part</a> of this book. There we checked the <code>CAN_USE_HEAP</code> flag to query the ability to use the heap. Now we need to check the <code>KEEP_SEGMENTS</code> flag. This flag is described in the linux <a href="https://www.kernel.org/doc/Documentation/x86/boot.txt" target="_blank">boot protocol</a> documentation:<div class="comments-icon"><div class="marker">+</div></div></p>
+</code></pre><p class="comments-section">Now that we have our bearings, let's look at the contents of the <code>startup_32</code> function.<div class="comments-icon"></div></p>
+<p class="comments-section">In the beginning of the <code>startup_32</code> function, we can see the <code>cld</code> instruction which clears the <code>DF</code> bit in the <a href="https://en.wikipedia.org/wiki/FLAGS_register" target="_blank">flags</a> register. When the direction flag is clear, all string operations like <a href="http://x86.renejeschke.de/html/file_module_x86_id_306.html" target="_blank">stos</a>, <a href="http://x86.renejeschke.de/html/file_module_x86_id_287.html" target="_blank">scas</a> and others will increment the index registers <code>esi</code> or <code>edi</code>. We need to clear the direction flag because later we will use strings operations to perform various operations such as clearing space for page tables.<div class="comments-icon"></div></p>
+<p class="comments-section">After we have cleared the <code>DF</code> bit, the next step is to check the <code>KEEP_SEGMENTS</code> flag in the <code>loadflags</code> kernel setup header field. If you remember, we already talked about <code>loadflags</code> in the very first <a href="https://0xax.gitbooks.io/linux-insides/content/Booting/linux-bootstrap-1.html" target="_blank">part</a> of this book. There we checked the <code>CAN_USE_HEAP</code> flag to query the ability to use the heap. Now we need to check the <code>KEEP_SEGMENTS</code> flag. This flag is described in the linux <a href="https://www.kernel.org/doc/Documentation/x86/boot.txt" target="_blank">boot protocol</a> documentation:<div class="comments-icon"></div></p>
 <pre><code>Bit 6 (write): KEEP_SEGMENTS
 Protocol: 2.07+
 - If 0, reload the segment registers in the 32bit entry point.
 - If 1, do not reload the segment registers in the 32bit entry point.
 Assume that %cs %ds %ss %es are all set to flat segments with
 a base of 0 (or the equivalent for their environment).
-</code></pre><p class="comments-section">So, if the <code>KEEP_SEGMENTS</code> bit is not set in <code>loadflags</code>, we need to set the <code>ds</code>, <code>ss</code> and <code>es</code> segment registers to the index of the data segment with a base of <code>0</code>. That we do:<div class="comments-icon"><div class="marker">+</div></div></p>
+</code></pre><p class="comments-section">So, if the <code>KEEP_SEGMENTS</code> bit is not set in <code>loadflags</code>, we need to set the <code>ds</code>, <code>ss</code> and <code>es</code> segment registers to the index of the data segment with a base of <code>0</code>. That we do:<div class="comments-icon"></div></p>
 <pre><code class="lang-C">    testb $KEEP_SEGMENTS, BP_loadflags(%esi)
 jnz <span class="hljs-number">1f</span>
 
@@ -149,8 +149,8 @@ movl    %eax, %ds
 movl    %eax, %es
 movl    %eax, %ss
 </code></pre>
-<p class="comments-section">Remember that <code>__BOOT_DS</code> is <code>0x18</code> (the index of the data segment in the <a href="https://en.wikipedia.org/wiki/Global_Descriptor_Table" target="_blank">Global Descriptor Table</a>). If <code>KEEP_SEGMENTS</code> is set, we jump to the nearest <code>1f</code> label or update segment registers with <code>__BOOT_DS</code> if they are not set. This is all pretty easy, but here's something to consider. If you've read the previous <a href="https://github.com/0xAX/linux-insides/blob/v4.16/Booting/linux-bootstrap-3.md" target="_blank">part</a>, you may remember that we already updated these segment registers right after we switched to <a href="https://en.wikipedia.org/wiki/Protected_mode" target="_blank">protected mode</a> in <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/pmjump.S" target="_blank">arch/x86/boot/pmjump.S</a>. So why do we need to care about the values in the segment registers again? The answer is easy. The Linux kernel also has a 32-bit boot protocol and if a bootloader uses <em>that</em> to load the Linux kernel, all the code before the <code>startup_32</code> function will be missed. In this case, the <code>startup_32</code> function would be the first entry point to the Linux kernel right after the bootloader and there are no guarantees that the segment registers will be in a known state.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">After we have checked the <code>KEEP_SEGMENTS</code> flag and set the segment registers to a correct value, the next step is to calculate the difference between where the kernel is compiled to run, and where we loaded it. Remember that <code>setup.ld.S</code> contains the following definition: <code>. = 0</code> at the start of the <code>.head.text</code> section. This means that the code in this section is compiled to run at the address <code>0</code>. We can see this in the output of <code>objdump</code>:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Remember that <code>__BOOT_DS</code> is <code>0x18</code> (the index of the data segment in the <a href="https://en.wikipedia.org/wiki/Global_Descriptor_Table" target="_blank">Global Descriptor Table</a>). If <code>KEEP_SEGMENTS</code> is set, we jump to the nearest <code>1f</code> label or update segment registers with <code>__BOOT_DS</code> if they are not set. This is all pretty easy, but here's something to consider. If you've read the previous <a href="https://github.com/0xAX/linux-insides/blob/v4.16/Booting/linux-bootstrap-3.md" target="_blank">part</a>, you may remember that we already updated these segment registers right after we switched to <a href="https://en.wikipedia.org/wiki/Protected_mode" target="_blank">protected mode</a> in <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/pmjump.S" target="_blank">arch/x86/boot/pmjump.S</a>. So why do we need to care about the values in the segment registers again? The answer is easy. The Linux kernel also has a 32-bit boot protocol and if a bootloader uses <em>that</em> to load the Linux kernel, all the code before the <code>startup_32</code> function will be missed. In this case, the <code>startup_32</code> function would be the first entry point to the Linux kernel right after the bootloader and there are no guarantees that the segment registers will be in a known state.<div class="comments-icon"></div></p>
+<p class="comments-section">After we have checked the <code>KEEP_SEGMENTS</code> flag and set the segment registers to a correct value, the next step is to calculate the difference between where the kernel is compiled to run, and where we loaded it. Remember that <code>setup.ld.S</code> contains the following definition: <code>. = 0</code> at the start of the <code>.head.text</code> section. This means that the code in this section is compiled to run at the address <code>0</code>. We can see this in the output of <code>objdump</code>:<div class="comments-icon"></div></p>
 <pre><code>arch/x86/boot/compressed/vmlinux:     file format elf64-x86-64
 
 
@@ -159,17 +159,17 @@ Disassembly of section .head.text:
 0000000000000000 &lt;startup_32&gt;:
 0:   fc                      cld
 1:   f6 86 11 02 00 00 40    testb  $0x40,0x211(%rsi)
-</code></pre><p class="comments-section">The <code>objdump</code> util tells us that the address of the <code>startup_32</code> function is <code>0</code> but that isn't so. We now need to know where we actually are. This is pretty simple to do in <a href="https://en.wikipedia.org/wiki/Long_mode" target="_blank">long mode</a> because it supports <code>rip</code> relative addressing, but currently we are in <a href="https://en.wikipedia.org/wiki/Protected_mode" target="_blank">protected mode</a>. We will use a common pattern to find the address of the <code>startup_32</code> function. We need to define a label, make a call to it and pop the top of the stack to a register:<div class="comments-icon"><div class="marker">+</div></div></p>
+</code></pre><p class="comments-section">The <code>objdump</code> util tells us that the address of the <code>startup_32</code> function is <code>0</code> but that isn't so. We now need to know where we actually are. This is pretty simple to do in <a href="https://en.wikipedia.org/wiki/Long_mode" target="_blank">long mode</a> because it supports <code>rip</code> relative addressing, but currently we are in <a href="https://en.wikipedia.org/wiki/Protected_mode" target="_blank">protected mode</a>. We will use a common pattern to find the address of the <code>startup_32</code> function. We need to define a label, make a call to it and pop the top of the stack to a register:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">call label
 label: pop %reg
 </code></pre>
-<p class="comments-section">After this, the register indicated by <code>%reg</code> will contain the address of <code>label</code>. Let's look at the code which uses this pattern to search for the <code>startup_32</code> function in the Linux kernel:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">After this, the register indicated by <code>%reg</code> will contain the address of <code>label</code>. Let's look at the code which uses this pattern to search for the <code>startup_32</code> function in the Linux kernel:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">        leal    (BP_scratch+4)(%esi), %esp
 call    1f
 1:      popl    %ebp
 subl    $1b, %ebp
 </code></pre>
-<p class="comments-section">As you remember from the previous part, the <code>esi</code> register contains the address of the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/include/uapi/asm/bootparam.h#L113" target="_blank">boot_params</a> structure which was filled before we moved to the protected mode. The <code>boot_params</code> structure contains a special field <code>scratch</code> with an offset of <code>0x1e4</code>. This four byte field is a temporary stack for the <code>call</code> instruction. We set <code>esp</code> to the address four bytes after the <code>BP_scratch</code> field of the <code>boot_params</code> structure. We add <code>4</code> bytes to the base of the <code>BP_scratch</code> field because, as just described, it will be a temporary stack and the stack grows from the top to bottom in the <code>x86_64</code> architecture. So our stack pointer will point to the top of the temporary stack. Next, we can see the pattern that I've described above. We make a call to the <code>1f</code> label and pop the top of the stack onto <code>ebp</code>. This works because <code>call</code> stores the return address of the current function on the top of the stack. We now have the address of the <code>1f</code> label and can now easily get the address of the <code>startup_32</code> function. We just need to subtract the address of the label from the address we got from the stack:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">As you remember from the previous part, the <code>esi</code> register contains the address of the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/include/uapi/asm/bootparam.h#L113" target="_blank">boot_params</a> structure which was filled before we moved to the protected mode. The <code>boot_params</code> structure contains a special field <code>scratch</code> with an offset of <code>0x1e4</code>. This four byte field is a temporary stack for the <code>call</code> instruction. We set <code>esp</code> to the address four bytes after the <code>BP_scratch</code> field of the <code>boot_params</code> structure. We add <code>4</code> bytes to the base of the <code>BP_scratch</code> field because, as just described, it will be a temporary stack and the stack grows from the top to bottom in the <code>x86_64</code> architecture. So our stack pointer will point to the top of the temporary stack. Next, we can see the pattern that I've described above. We make a call to the <code>1f</code> label and pop the top of the stack onto <code>ebp</code>. This works because <code>call</code> stores the return address of the current function on the top of the stack. We now have the address of the <code>1f</code> label and can now easily get the address of the <code>startup_32</code> function. We just need to subtract the address of the label from the address we got from the stack:<div class="comments-icon"></div></p>
 <pre><code>startup_32 (0x0)     +-----------------------+
 |                       |
 |                       |
@@ -183,7 +183,7 @@ subl    $1b, %ebp
 |                       |
 |                       |
 +-----------------------+
-</code></pre><p class="comments-section">The <code>startup_32</code> function is linked to run at the address <code>0x0</code> and this means that <code>1f</code> has the address <code>0x0 + offset to 1f</code>, which is approximately <code>0x21</code> bytes. The <code>ebp</code> register contains the real physical address of the <code>1f</code> label. So, if we subtract <code>1f</code> from the <code>ebp</code> register, we will get the real physical address of the <code>startup_32</code> function. The Linux kernel <a href="https://www.kernel.org/doc/Documentation/x86/boot.txt" target="_blank">boot protocol</a> saysthe base of the protected mode kernel is <code>0x100000</code>. We can verify this with <a href="https://en.wikipedia.org/wiki/GNU_Debugger" target="_blank">gdb</a>. Let's start the debugger and add a breakpoint at the address of <code>1f</code>, which is <code>0x100021</code>. If this is correct we will see the value <code>0x100021</code> in the <code>ebp</code> register:<div class="comments-icon"><div class="marker">+</div></div></p>
+</code></pre><p class="comments-section">The <code>startup_32</code> function is linked to run at the address <code>0x0</code> and this means that <code>1f</code> has the address <code>0x0 + offset to 1f</code>, which is approximately <code>0x21</code> bytes. The <code>ebp</code> register contains the real physical address of the <code>1f</code> label. So, if we subtract <code>1f</code> from the <code>ebp</code> register, we will get the real physical address of the <code>startup_32</code> function. The Linux kernel <a href="https://www.kernel.org/doc/Documentation/x86/boot.txt" target="_blank">boot protocol</a> saysthe base of the protected mode kernel is <code>0x100000</code>. We can verify this with <a href="https://en.wikipedia.org/wiki/GNU_Debugger" target="_blank">gdb</a>. Let's start the debugger and add a breakpoint at the address of <code>1f</code>, which is <code>0x100021</code>. If this is correct we will see the value <code>0x100021</code> in the <code>ebp</code> register:<div class="comments-icon"></div></p>
 <pre><code>$ gdb
 (gdb)$ target remote :1234
 Remote debugging using :1234
@@ -211,7 +211,7 @@ ds             0x18    0x18
 es             0x18    0x18
 fs             0x18    0x18
 gs             0x18    0x18
-</code></pre><p class="comments-section">If we execute the next instruction, <code>subl $1b, %ebp</code>, we will see:<div class="comments-icon"><div class="marker">+</div></div></p>
+</code></pre><p class="comments-section">If we execute the next instruction, <code>subl $1b, %ebp</code>, we will see:<div class="comments-icon"></div></p>
 <pre><code>(gdb) nexti
 ...
 ...
@@ -220,14 +220,14 @@ ebp            0x100000    0x100000
 ...
 ...
 ...
-</code></pre><p class="comments-section">Ok, we've verified that the address of the <code>startup_32</code> function is <code>0x100000</code>. After we know the address of the <code>startup_32</code> label, we can prepare for the transition to <a href="https://en.wikipedia.org/wiki/Long_mode" target="_blank">long mode</a>. Our next goal is to setup the stack and verify that the CPU supports long mode and <a href="http://en.wikipedia.org/wiki/Streaming_SIMD_Extensions" target="_blank">SSE</a>.<div class="comments-icon"><div class="marker">+</div></div></p>
+</code></pre><p class="comments-section">Ok, we've verified that the address of the <code>startup_32</code> function is <code>0x100000</code>. After we know the address of the <code>startup_32</code> label, we can prepare for the transition to <a href="https://en.wikipedia.org/wiki/Long_mode" target="_blank">long mode</a>. Our next goal is to setup the stack and verify that the CPU supports long mode and <a href="http://en.wikipedia.org/wiki/Streaming_SIMD_Extensions" target="_blank">SSE</a>.<div class="comments-icon"></div></p>
 <h2 id="stack-setup-and-cpu-verification">Stack setup and CPU verification</h2>
-<p class="comments-section">We can't set up the stack until we know where in memory the <code>startup_32</code> label is. If we imagine the stack as an array, the stack pointer register <code>esp</code> must point to the end of it. Of course, we can define an array in our code, but we need to know its actual address to configure the stack pointer correctly. Let's look at the code:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">We can't set up the stack until we know where in memory the <code>startup_32</code> label is. If we imagine the stack as an array, the stack pointer register <code>esp</code> must point to the end of it. Of course, we can define an array in our code, but we need to know its actual address to configure the stack pointer correctly. Let's look at the code:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    movl    $boot_stack_end, %eax
 addl    %ebp, %eax
 movl    %eax, %esp
 </code></pre>
-<p class="comments-section">The <code>boot_stack_end</code> label is also defined in the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/head_64.S" target="_blank">arch/x86/boot/compressed/head_64.S</a> assembly source code file  and is located in the <a href="https://en.wikipedia.org/wiki/.bss" target="_blank">.bss</a> section:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">The <code>boot_stack_end</code> label is also defined in the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/head_64.S" target="_blank">arch/x86/boot/compressed/head_64.S</a> assembly source code file  and is located in the <a href="https://en.wikipedia.org/wiki/.bss" target="_blank">.bss</a> section:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    .bss
 .balign 4
 boot_heap:
@@ -236,43 +236,43 @@ boot_stack:
 .fill BOOT_STACK_SIZE, 1, 0
 boot_stack_end:
 </code></pre>
-<p class="comments-section">First of all, we put the address of <code>boot_stack_end</code> into the <code>eax</code> register, so the <code>eax</code> register contains the address of <code>boot_stack_end</code> as it was linked, which is <code>0x0 + boot_stack_end</code>. To get the real address of <code>boot_stack_end</code>, we need to add the real address of the <code>startup_32</code> function. We've already found this address and put it into the <code>ebp</code> register. In the end, the  <code>eax</code> register will contain the real address of <code>boot_stack_end</code> and we just need to set the stack pointer to it.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">After we have set up the stack, the next step is CPU verification. Since we are transitioning to <code>long mode</code>, we need to check that the CPU supports <code>long mode</code> and <code>SSE</code>. We will do this with a call to the <code>verify_cpu</code> function:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">First of all, we put the address of <code>boot_stack_end</code> into the <code>eax</code> register, so the <code>eax</code> register contains the address of <code>boot_stack_end</code> as it was linked, which is <code>0x0 + boot_stack_end</code>. To get the real address of <code>boot_stack_end</code>, we need to add the real address of the <code>startup_32</code> function. We've already found this address and put it into the <code>ebp</code> register. In the end, the  <code>eax</code> register will contain the real address of <code>boot_stack_end</code> and we just need to set the stack pointer to it.<div class="comments-icon"></div></p>
+<p class="comments-section">After we have set up the stack, the next step is CPU verification. Since we are transitioning to <code>long mode</code>, we need to check that the CPU supports <code>long mode</code> and <code>SSE</code>. We will do this with a call to the <code>verify_cpu</code> function:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    call    verify_cpu
 testl    %eax, %eax
 jnz    no_longmode
 </code></pre>
-<p class="comments-section">This function is defined in the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/kernel/verify_cpu.S" target="_blank">arch/x86/kernel/verify_cpu.S</a> assembly file and just contains a couple of calls to the <a href="https://en.wikipedia.org/wiki/CPUID" target="_blank">cpuid</a> instruction. This instruction is used to get information about the processor. In our case, it checks for <code>long mode</code> and <code>SSE</code> support and sets the <code>eax</code> register to <code>0</code> on success and <code>1</code> on failure.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">If the value of <code>eax</code> is not zero, we jump to the <code>no_longmode</code> label which just stops the CPU with the <code>hlt</code> instruction while no hardware interrupt can happen:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">This function is defined in the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/kernel/verify_cpu.S" target="_blank">arch/x86/kernel/verify_cpu.S</a> assembly file and just contains a couple of calls to the <a href="https://en.wikipedia.org/wiki/CPUID" target="_blank">cpuid</a> instruction. This instruction is used to get information about the processor. In our case, it checks for <code>long mode</code> and <code>SSE</code> support and sets the <code>eax</code> register to <code>0</code> on success and <code>1</code> on failure.<div class="comments-icon"></div></p>
+<p class="comments-section">If the value of <code>eax</code> is not zero, we jump to the <code>no_longmode</code> label which just stops the CPU with the <code>hlt</code> instruction while no hardware interrupt can happen:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">no_longmode:
 1:
 hlt
 jmp     1b
 </code></pre>
-<p class="comments-section">If the value of the <code>eax</code> register is zero, everything is ok and we can continue.<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">If the value of the <code>eax</code> register is zero, everything is ok and we can continue.<div class="comments-icon"></div></p>
 <h2 id="calculate-the-relocation-address">Calculate the relocation address</h2>
-<p class="comments-section">The next step is to calculate the relocation address for decompression if needed. First, we need to know what it means for a kernel to be <code>relocatable</code>. We already know that the base address of the 32-bit entry point of the Linux kernel is <code>0x100000</code>, but that is a 32-bit entry point. The default base address of the Linux kernel is determined by the value of the <code>CONFIG_PHYSICAL_START</code> kernel configuration option. Its default value is <code>0x1000000</code> or <code>16 MB</code>. The main problem here is that if the Linux kernel crashes, a kernel developer must have a <code>rescue kernel</code> for <a href="https://www.kernel.org/doc/Documentation/kdump/kdump.txt" target="_blank">kdump</a> which is configured to load from a different address. The Linux kernel provides a special configuration option to solve this problem: <code>CONFIG_RELOCATABLE</code>. As we can read in the documentation of the Linux kernel:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">The next step is to calculate the relocation address for decompression if needed. First, we need to know what it means for a kernel to be <code>relocatable</code>. We already know that the base address of the 32-bit entry point of the Linux kernel is <code>0x100000</code>, but that is a 32-bit entry point. The default base address of the Linux kernel is determined by the value of the <code>CONFIG_PHYSICAL_START</code> kernel configuration option. Its default value is <code>0x1000000</code> or <code>16 MB</code>. The main problem here is that if the Linux kernel crashes, a kernel developer must have a <code>rescue kernel</code> for <a href="https://www.kernel.org/doc/Documentation/kdump/kdump.txt" target="_blank">kdump</a> which is configured to load from a different address. The Linux kernel provides a special configuration option to solve this problem: <code>CONFIG_RELOCATABLE</code>. As we can read in the documentation of the Linux kernel:<div class="comments-icon"></div></p>
 <pre><code>This builds a kernel image that retains relocation information
 so it can be loaded someplace besides the default 1MB.
 
 Note: If CONFIG_RELOCATABLE=y, then the kernel runs from the address
 it has been loaded at and the compile time physical address
 (CONFIG_PHYSICAL_START) is used as the minimum location.
-</code></pre><p class="comments-section">Now that we know where to start, let's get to it.<div class="comments-icon"><div class="marker">+</div></div></p>
+</code></pre><p class="comments-section">Now that we know where to start, let's get to it.<div class="comments-icon"></div></p>
 <h2 id="reload-the-segments-if-needed">Reload the segments if needed</h2>
-<p class="comments-section">As indicated above, we start in the <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/boot/compressed/head_64.S" target="_blank">arch/x86/boot/compressed/head_64.S</a> assembly source code file. We first see the definition of a special section attribute before the definition of the <code>startup_32</code> function:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">As indicated above, we start in the <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/boot/compressed/head_64.S" target="_blank">arch/x86/boot/compressed/head_64.S</a> assembly source code file. We first see the definition of a special section attribute before the definition of the <code>startup_32</code> function:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    __HEAD
 .code32
 ENTRY(startup_32)
 </code></pre>
-<p class="comments-section"><code>__HEAD</code> is a macro defined in the <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/include/linux/init.h" target="_blank">include/linux/init.h</a> header file and expands to the definition of the following section:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section"><code>__HEAD</code> is a macro defined in the <a href="https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/include/linux/init.h" target="_blank">include/linux/init.h</a> header file and expands to the definition of the following section:<div class="comments-icon"></div></p>
 <pre><code class="lang-C"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> __HEAD        .section    <span class="hljs-string">".head.text"</span>,<span class="hljs-string">"ax"</span></span>
 </code></pre>
-<p class="comments-section">Here, <code>.head.text</code> is the name of the section and <code>ax</code> is a set of flags. In our case, these flags show us that this section is [executable](<a href="https://en.wikipedia.org/wiki/Executable" target="_blank">https://en.wikipedia.org/wiki/Executable</a><div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">In simple terms, this means that a Linux kernel with this option set can be booted from different addresses. Technically, this is done by compiling the decompressor as <a href="https://en.wikipedia.org/wiki/Position-independent_code" target="_blank">position independent code</a>. If we look at <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/Makefile" target="_blank">arch/x86/boot/compressed/Makefile</a>, we can see that the decompressor is indeed compiled with the <code>-fPIC</code> flag:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Here, <code>.head.text</code> is the name of the section and <code>ax</code> is a set of flags. In our case, these flags show us that this section is [executable](<a href="https://en.wikipedia.org/wiki/Executable" target="_blank">https://en.wikipedia.org/wiki/Executable</a><div class="comments-icon"></div></p>
+<p class="comments-section">In simple terms, this means that a Linux kernel with this option set can be booted from different addresses. Technically, this is done by compiling the decompressor as <a href="https://en.wikipedia.org/wiki/Position-independent_code" target="_blank">position independent code</a>. If we look at <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/Makefile" target="_blank">arch/x86/boot/compressed/Makefile</a>, we can see that the decompressor is indeed compiled with the <code>-fPIC</code> flag:<div class="comments-icon"></div></p>
 <pre><code class="lang-Makefile">KBUILD_CFLAGS += -fno-strict-aliasing -fPIC
 </code></pre>
-<p class="comments-section">When we are using position-independent code an address is obtained by adding the address field of the instruction to the value of the program counter. We can load code which uses such addressing from any address. That's why we had to get the real physical address of <code>startup_32</code>. Now let's get back to the Linux kernel code. Our current goal is to calculate an address where we can relocate the kernel for decompression. The calculation of this address depends on the <code>CONFIG_RELOCATABLE</code> kernel configuration option. Let's look at the code:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">When we are using position-independent code an address is obtained by adding the address field of the instruction to the value of the program counter. We can load code which uses such addressing from any address. That's why we had to get the real physical address of <code>startup_32</code>. Now let's get back to the Linux kernel code. Our current goal is to calculate an address where we can relocate the kernel for decompression. The calculation of this address depends on the <code>CONFIG_RELOCATABLE</code> kernel configuration option. Let's look at the code:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">#ifdef CONFIG_RELOCATABLE
 movl    %ebp, %ebx
 movl    BP_kernel_alignment(%esi), %eax
@@ -285,26 +285,26 @@ jge    1f
 #endif
 movl    $LOAD_PHYSICAL_ADDR, %ebx
 </code></pre>
-<p class="comments-section">Remember that the value of the <code>ebp</code> register is the physical address of the <code>startup_32</code> label. If the <code>CONFIG_RELOCATABLE</code> kernel configuration option is enabled during kernel configuration, we put this address in the <code>ebx</code> register, align it to a multiple of <code>2MB</code> and compare it with the result of the <code>LOAD_PHYSICAL_ADDR</code> macro. <code>LOAD_PHYSICAL_ADDR</code> is defined in the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/include/asm/boot.h" target="_blank">arch/x86/include/asm/boot.h</a> header file and it looks like this:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Remember that the value of the <code>ebp</code> register is the physical address of the <code>startup_32</code> label. If the <code>CONFIG_RELOCATABLE</code> kernel configuration option is enabled during kernel configuration, we put this address in the <code>ebx</code> register, align it to a multiple of <code>2MB</code> and compare it with the result of the <code>LOAD_PHYSICAL_ADDR</code> macro. <code>LOAD_PHYSICAL_ADDR</code> is defined in the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/include/asm/boot.h" target="_blank">arch/x86/include/asm/boot.h</a> header file and it looks like this:<div class="comments-icon"></div></p>
 <pre><code class="lang-C"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> LOAD_PHYSICAL_ADDR ((CONFIG_PHYSICAL_START \
 + (CONFIG_PHYSICAL_ALIGN - 1)) \
 &amp; ~(CONFIG_PHYSICAL_ALIGN - 1))</span>
 </code></pre>
-<p class="comments-section">As we can see it just expands to the aligned <code>CONFIG_PHYSICAL_ALIGN</code> value which represents the physical address where the kernel will be loaded. After comparing <code>LOAD_PHYSICAL_ADDR</code> and the value of the <code>ebx</code> register, we add the offset from <code>startup_32</code> where we will decompress the compressed kernel image. If the <code>CONFIG_RELOCATABLE</code> option is not enabled during kernel configuration, we just add <code>z_extract_offset</code> to the default address where the kernel is loaded.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">After all of these calculations, <code>ebp</code> will contain the address where we loaded the kernel and <code>ebx</code> will contain the address where the decompressed kernel will be relocated. But that is not the end. The compressed kernel image should be moved to the end of the decompression buffer to simplify calculations regarding where the kernel will be located later. For this:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">As we can see it just expands to the aligned <code>CONFIG_PHYSICAL_ALIGN</code> value which represents the physical address where the kernel will be loaded. After comparing <code>LOAD_PHYSICAL_ADDR</code> and the value of the <code>ebx</code> register, we add the offset from <code>startup_32</code> where we will decompress the compressed kernel image. If the <code>CONFIG_RELOCATABLE</code> option is not enabled during kernel configuration, we just add <code>z_extract_offset</code> to the default address where the kernel is loaded.<div class="comments-icon"></div></p>
+<p class="comments-section">After all of these calculations, <code>ebp</code> will contain the address where we loaded the kernel and <code>ebx</code> will contain the address where the decompressed kernel will be relocated. But that is not the end. The compressed kernel image should be moved to the end of the decompression buffer to simplify calculations regarding where the kernel will be located later. For this:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">1:
 movl    BP_init_size(%esi), %eax
 subl    $_end, %eax
 addl    %eax, %ebx
 </code></pre>
-<p class="comments-section">we put the value from the <code>boot_params.BP_init_size</code> field (or the kernel setup header value from <code>hdr.init_size</code>) in the <code>eax</code> register. The <code>BP_init_size</code> field contains the larger of the compressed and uncompressed <a href="https://en.wikipedia.org/wiki/Vmlinux" target="_blank">vmlinux</a> sizes. Next we subtract the address of the <code>_end</code> symbol from this value and add the result of the subtraction to the <code>ebx</code> register which will store the base address for kernel decompression.<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">we put the value from the <code>boot_params.BP_init_size</code> field (or the kernel setup header value from <code>hdr.init_size</code>) in the <code>eax</code> register. The <code>BP_init_size</code> field contains the larger of the compressed and uncompressed <a href="https://en.wikipedia.org/wiki/Vmlinux" target="_blank">vmlinux</a> sizes. Next we subtract the address of the <code>_end</code> symbol from this value and add the result of the subtraction to the <code>ebx</code> register which will store the base address for kernel decompression.<div class="comments-icon"></div></p>
 <h2 id="preparation-before-entering-long-mode">Preparation before entering long mode</h2>
-<p class="comments-section">After we get the address to relocate the compressed kernel image to, we need to do one last step before we can transition to 64-bit mode. First, we need to update the <a href="https://en.wikipedia.org/wiki/Global_Descriptor_Table" target="_blank">Global Descriptor Table</a> with 64-bit segments because a relocatable kernel is runnable at any address below 512GB:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">After we get the address to relocate the compressed kernel image to, we need to do one last step before we can transition to 64-bit mode. First, we need to update the <a href="https://en.wikipedia.org/wiki/Global_Descriptor_Table" target="_blank">Global Descriptor Table</a> with 64-bit segments because a relocatable kernel is runnable at any address below 512GB:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    addl    %ebp, gdt+2(%ebp)
 lgdt    gdt(%ebp)
 </code></pre>
-<p class="comments-section">Here we adjust the base address of the Global Descriptor table to the address where we actually loaded the kernel and load the <code>Global Descriptor Table</code> with the <code>lgdt</code> instruction.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">To understand the magic with <code>gdt</code> offsets we need to look at the definition of the <code>Global Descriptor Table</code>. We can find its definition in the same source code <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/head_64.S" target="_blank">file</a>:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Here we adjust the base address of the Global Descriptor table to the address where we actually loaded the kernel and load the <code>Global Descriptor Table</code> with the <code>lgdt</code> instruction.<div class="comments-icon"></div></p>
+<p class="comments-section">To understand the magic with <code>gdt</code> offsets we need to look at the definition of the <code>Global Descriptor Table</code>. We can find its definition in the same source code <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/head_64.S" target="_blank">file</a>:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    .data
 gdt64:
 .word    gdt_end - gdt
@@ -322,17 +322,17 @@ gdt:
 .quad   0x0000000000000000    /* TS continued */
 gdt_end:
 </code></pre>
-<p class="comments-section">We can see that it is located in the <code>.data</code> section and contains five descriptors: the first is a <code>32-bit</code> descriptor for the kernel code segment, a <code>64-bit</code> kernel segment, a kernel data segment and two task descriptors.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">We already loaded the <code>Global Descriptor Table</code> in the previous <a href="https://github.com/0xAX/linux-insides/blob/v4.16/Booting/linux-bootstrap-3.md" target="_blank">part</a>, and now we're doing almost the same here, but we set descriptors to use <code>CS.L = 1</code> and <code>CS.D = 0</code> for execution in <code>64</code> bit mode. As we can see, the definition of the <code>gdt</code> starts with a two byte value: <code>gdt_end - gdt</code> which represents the address of the last byte in the <code>gdt</code> table or the table limit. The next four bytes contain the base address of the <code>gdt</code>.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">After we have loaded the <code>Global Descriptor Table</code> with the <code>lgdt</code> instruction, we must enable <a href="http://en.wikipedia.org/wiki/Physical_Address_Extension" target="_blank">PAE</a> by putting the value of the <code>cr4</code> register into <code>eax</code>, setting the 5th bit and loading it back into <code>cr4</code>:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">We can see that it is located in the <code>.data</code> section and contains five descriptors: the first is a <code>32-bit</code> descriptor for the kernel code segment, a <code>64-bit</code> kernel segment, a kernel data segment and two task descriptors.<div class="comments-icon"></div></p>
+<p class="comments-section">We already loaded the <code>Global Descriptor Table</code> in the previous <a href="https://github.com/0xAX/linux-insides/blob/v4.16/Booting/linux-bootstrap-3.md" target="_blank">part</a>, and now we're doing almost the same here, but we set descriptors to use <code>CS.L = 1</code> and <code>CS.D = 0</code> for execution in <code>64</code> bit mode. As we can see, the definition of the <code>gdt</code> starts with a two byte value: <code>gdt_end - gdt</code> which represents the address of the last byte in the <code>gdt</code> table or the table limit. The next four bytes contain the base address of the <code>gdt</code>.<div class="comments-icon"></div></p>
+<p class="comments-section">After we have loaded the <code>Global Descriptor Table</code> with the <code>lgdt</code> instruction, we must enable <a href="http://en.wikipedia.org/wiki/Physical_Address_Extension" target="_blank">PAE</a> by putting the value of the <code>cr4</code> register into <code>eax</code>, setting the 5th bit and loading it back into <code>cr4</code>:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    movl    %cr4, %eax
 orl    $X86_CR4_PAE, %eax
 movl    %eax, %cr4
 </code></pre>
-<p class="comments-section">Now we are almost finished with the preparations needed to move into 64-bit mode. The last step is to build page tables, but before that, here is some information about long mode.<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Now we are almost finished with the preparations needed to move into 64-bit mode. The last step is to build page tables, but before that, here is some information about long mode.<div class="comments-icon"></div></p>
 <h2 id="long-mode">Long mode</h2>
-<p class="comments-section"><a href="https://en.wikipedia.org/wiki/Long_mode" target="_blank">Long mode</a> is the native mode for <a href="https://en.wikipedia.org/wiki/X86-64" target="_blank">x86_64</a> processors. First, let's look at some differences between <code>x86_64</code> and <code>x86</code>.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section"><code>64-bit</code> mode provides the following features:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section"><a href="https://en.wikipedia.org/wiki/Long_mode" target="_blank">Long mode</a> is the native mode for <a href="https://en.wikipedia.org/wiki/X86-64" target="_blank">x86_64</a> processors. First, let's look at some differences between <code>x86_64</code> and <code>x86</code>.<div class="comments-icon"></div></p>
+<p class="comments-section"><code>64-bit</code> mode provides the following features:<div class="comments-icon"></div></p>
 <ul>
 <li>8 new general purpose registers from <code>r8</code> to <code>r15</code></li>
 <li>All general purpose registers are 64-bit now</li>
@@ -341,43 +341,43 @@ movl    %eax, %cr4
 <li>64-Bit Addresses and Operands;</li>
 <li>RIP Relative Addressing (we will see an example of this in the coming parts).</li>
 </ul>
-<p class="comments-section">Long mode is an extension of the legacy protected mode. It consists of two sub-modes:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Long mode is an extension of the legacy protected mode. It consists of two sub-modes:<div class="comments-icon"></div></p>
 <ul>
 <li>64-bit mode;</li>
 <li>compatibility mode.</li>
 </ul>
-<p class="comments-section">To switch into <code>64-bit</code> mode we need to do the following things:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">To switch into <code>64-bit</code> mode we need to do the following things:<div class="comments-icon"></div></p>
 <ul>
 <li>Enable <a href="https://en.wikipedia.org/wiki/Physical_Address_Extension" target="_blank">PAE</a>;</li>
 <li>Build page tables and load the address of the top level page table into the <code>cr3</code> register;</li>
 <li>Enable <code>EFER.LME</code>;</li>
 <li>Enable paging.</li>
 </ul>
-<p class="comments-section">We already enabled <code>PAE</code> by setting the <code>PAE</code> bit in the <code>cr4</code> control register. Our next goal is to build the structure for <a href="https://en.wikipedia.org/wiki/Paging" target="_blank">paging</a>. We will discuss this in the next paragraph.<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">We already enabled <code>PAE</code> by setting the <code>PAE</code> bit in the <code>cr4</code> control register. Our next goal is to build the structure for <a href="https://en.wikipedia.org/wiki/Paging" target="_blank">paging</a>. We will discuss this in the next paragraph.<div class="comments-icon"></div></p>
 <h2 id="early-page-table-initialization">Early page table initialization</h2>
-<p class="comments-section">We already know that before we can move into <code>64-bit</code> mode, we need to build page tables. Let's look at how the early <code>4G</code> boot page tables are built.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section"><strong>NOTE: I will not describe the theory of virtual memory here. If you want to know more about virtual memory, check out the links at the end of this part.</strong><div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">The Linux kernel uses <code>4-level</code> paging, and we generally build 6 page tables:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">We already know that before we can move into <code>64-bit</code> mode, we need to build page tables. Let's look at how the early <code>4G</code> boot page tables are built.<div class="comments-icon"></div></p>
+<p class="comments-section"><strong>NOTE: I will not describe the theory of virtual memory here. If you want to know more about virtual memory, check out the links at the end of this part.</strong><div class="comments-icon"></div></p>
+<p class="comments-section">The Linux kernel uses <code>4-level</code> paging, and we generally build 6 page tables:<div class="comments-icon"></div></p>
 <ul>
 <li>One <code>PML4</code> or <code>Page Map Level 4</code> table with one entry;</li>
 <li>One <code>PDP</code> or <code>Page Directory Pointer</code> table with four entries;</li>
 <li>Four Page Directory tables with a total of <code>2048</code> entries.</li>
 </ul>
-<p class="comments-section">Let's look at how this is implemented. First, we clear the buffer for the page tables in memory. Every table is <code>4096</code> bytes, so we need clear a <code>24</code> kilobyte buffer:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Let's look at how this is implemented. First, we clear the buffer for the page tables in memory. Every table is <code>4096</code> bytes, so we need clear a <code>24</code> kilobyte buffer:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    leal    pgtable(%ebx), %edi
 xorl    %eax, %eax
 movl    $(BOOT_INIT_PGT_SIZE/4), %ecx
 rep    stosl
 </code></pre>
-<p class="comments-section">We put the address of <code>pgtable</code> with an offset of <code>ebx</code> (remember that <code>ebx</code> points to the location in memory where the kernel will be decompressed later) into the <code>edi</code> register, clear the <code>eax</code> register and set the <code>ecx</code> register to <code>6144</code>.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">The <code>rep stosl</code> instruction will write the value of <code>eax</code> to <code>edi</code>, add <code>4</code> to <code>edi</code> and decrement <code>ecx</code> by <code>1</code>. This operation will be repeated while the value of the <code>ecx</code> register is greater than zero. That's why we put <code>6144</code> or <code>BOOT_INIT_PGT_SIZE/4</code> in <code>ecx</code>.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section"><code>pgtable</code> is defined at the end of the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/head_64.S" target="_blank">arch/x86/boot/compressed/head_64.S</a> assembly file:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">We put the address of <code>pgtable</code> with an offset of <code>ebx</code> (remember that <code>ebx</code> points to the location in memory where the kernel will be decompressed later) into the <code>edi</code> register, clear the <code>eax</code> register and set the <code>ecx</code> register to <code>6144</code>.<div class="comments-icon"></div></p>
+<p class="comments-section">The <code>rep stosl</code> instruction will write the value of <code>eax</code> to <code>edi</code>, add <code>4</code> to <code>edi</code> and decrement <code>ecx</code> by <code>1</code>. This operation will be repeated while the value of the <code>ecx</code> register is greater than zero. That's why we put <code>6144</code> or <code>BOOT_INIT_PGT_SIZE/4</code> in <code>ecx</code>.<div class="comments-icon"></div></p>
+<p class="comments-section"><code>pgtable</code> is defined at the end of the <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/boot/compressed/head_64.S" target="_blank">arch/x86/boot/compressed/head_64.S</a> assembly file:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    .section ".pgtable","a",@nobits
 .balign 4096
 pgtable:
 .fill BOOT_PGT_SIZE, 1, 0
 </code></pre>
-<p class="comments-section">As we can see, it is located in the <code>.pgtable</code> section and its size depends on the <code>CONFIG_X86_VERBOSE_BOOTUP</code> kernel configuration option:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">As we can see, it is located in the <code>.pgtable</code> section and its size depends on the <code>CONFIG_X86_VERBOSE_BOOTUP</code> kernel configuration option:<div class="comments-icon"></div></p>
 <pre><code class="lang-C"><span class="hljs-meta">#  <span class="hljs-meta-keyword">ifdef</span> CONFIG_X86_VERBOSE_BOOTUP</span>
 <span class="hljs-meta">#   <span class="hljs-meta-keyword">define</span> BOOT_PGT_SIZE    (19*4096)</span>
 <span class="hljs-meta">#  <span class="hljs-meta-keyword">else</span> <span class="hljs-comment">/* !CONFIG_X86_VERBOSE_BOOTUP */</span></span>
@@ -387,13 +387,13 @@ pgtable:
 <span class="hljs-meta">#  <span class="hljs-meta-keyword">define</span> BOOT_PGT_SIZE        BOOT_INIT_PGT_SIZE</span>
 <span class="hljs-meta"># <span class="hljs-meta-keyword">endif</span></span>
 </code></pre>
-<p class="comments-section">After we have a buffer for the <code>pgtable</code> structure, we can start to build the top level page table - <code>PML4</code> - with:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">After we have a buffer for the <code>pgtable</code> structure, we can start to build the top level page table - <code>PML4</code> - with:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    leal    pgtable + 0(%ebx), %edi
 leal    0x1007 (%edi), %eax
 movl    %eax, 0(%edi)
 </code></pre>
-<p class="comments-section">Here again, we put the address of <code>pgtable</code> relative to <code>ebx</code> or in other words relative to address of <code>startup_32</code> in the <code>edi</code> register. Next, we put this address with an offset of <code>0x1007</code> into the <code>eax</code> register. <code>0x1007</code> is the result of adding the size of the <code>PML4</code> table which is <code>4096</code> or <code>0x1000</code> bytes with <code>7</code>. The <code>7</code> here represents the flags associated with the <code>PML4</code> entry. In our case, these flags are <code>PRESENT+RW+USER</code>. In the end, we just write the address of the first <code>PDP</code> entry to the <code>PML4</code> table.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">In the next step we will build four <code>Page Directory</code> entries in the <code>Page Directory Pointer</code> table with the same <code>PRESENT+RW+USE</code> flags:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Here again, we put the address of <code>pgtable</code> relative to <code>ebx</code> or in other words relative to address of <code>startup_32</code> in the <code>edi</code> register. Next, we put this address with an offset of <code>0x1007</code> into the <code>eax</code> register. <code>0x1007</code> is the result of adding the size of the <code>PML4</code> table which is <code>4096</code> or <code>0x1000</code> bytes with <code>7</code>. The <code>7</code> here represents the flags associated with the <code>PML4</code> entry. In our case, these flags are <code>PRESENT+RW+USER</code>. In the end, we just write the address of the first <code>PDP</code> entry to the <code>PML4</code> table.<div class="comments-icon"></div></p>
+<p class="comments-section">In the next step we will build four <code>Page Directory</code> entries in the <code>Page Directory Pointer</code> table with the same <code>PRESENT+RW+USE</code> flags:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    leal    pgtable + 0x1000(%ebx), %edi
 leal    0x1007(%edi), %eax
 movl    $4, %ecx
@@ -403,7 +403,7 @@ addl    $8, %edi
 decl    %ecx
 jnz    1b
 </code></pre>
-<p class="comments-section">We set <code>edi</code> to the base address of the page directory pointer which is at an offset of <code>4096</code> or <code>0x1000</code> bytes from the <code>pgtable</code> table and <code>eax</code> to the address of the first page directory pointer entry. We also set <code>ecx</code> to <code>4</code> to act as a counter in the following loop and write the address of the first page directory pointer table entry to the <code>edi</code> register. After this, <code>edi</code> will contain the address of the first page directory pointer entry with flags <code>0x7</code>. Next we calculate the address of the following page directory pointer entries — each entry is <code>8</code> bytes — and write their addresses to <code>eax</code>. The last step in building the paging structure is to build the <code>2048</code> page table entries with <code>2-MByte</code> pages:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">We set <code>edi</code> to the base address of the page directory pointer which is at an offset of <code>4096</code> or <code>0x1000</code> bytes from the <code>pgtable</code> table and <code>eax</code> to the address of the first page directory pointer entry. We also set <code>ecx</code> to <code>4</code> to act as a counter in the following loop and write the address of the first page directory pointer table entry to the <code>edi</code> register. After this, <code>edi</code> will contain the address of the first page directory pointer entry with flags <code>0x7</code>. Next we calculate the address of the following page directory pointer entries — each entry is <code>8</code> bytes — and write their addresses to <code>eax</code>. The last step in building the paging structure is to build the <code>2048</code> page table entries with <code>2-MByte</code> pages:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    leal    pgtable + 0x2000(%ebx), %edi
 movl    $0x00000183, %eax
 movl    $2048, %ecx
@@ -413,37 +413,37 @@ addl    $8, %edi
 decl    %ecx
 jnz    1b
 </code></pre>
-<p class="comments-section">Here we do almost the same things that we did in the previous example, all entries are associated with these flags - <code>$0x00000183</code> - <code>PRESENT + WRITE + MBZ</code>. In the end, we will have a page table with <code>2048</code> <code>2-MByte</code> pages, which represents a 4 Gigabyte block of memory:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Here we do almost the same things that we did in the previous example, all entries are associated with these flags - <code>$0x00000183</code> - <code>PRESENT + WRITE + MBZ</code>. In the end, we will have a page table with <code>2048</code> <code>2-MByte</code> pages, which represents a 4 Gigabyte block of memory:<div class="comments-icon"></div></p>
 <pre><code class="lang-python"><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-number">2048</span> * <span class="hljs-number">0x00200000</span>
 <span class="hljs-number">4294967296</span>
 </code></pre>
-<p class="comments-section">Since we've just finished building our early page table structure which maps <code>4</code> gigabytes of memory, we can put the address of the high-level page table - <code>PML4</code> - into the <code>cr3</code> control register:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Since we've just finished building our early page table structure which maps <code>4</code> gigabytes of memory, we can put the address of the high-level page table - <code>PML4</code> - into the <code>cr3</code> control register:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    leal    pgtable(%ebx), %eax
 movl    %eax, %cr3
 </code></pre>
-<p class="comments-section">That's all. We are now prepared to transition to long mode.<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">That's all. We are now prepared to transition to long mode.<div class="comments-icon"></div></p>
 <h2 id="the-transition-to-64-bit-mode">The transition to 64-bit mode</h2>
-<p class="comments-section">First of all we need to set the <code>EFER.LME</code> flag in the <a href="http://en.wikipedia.org/wiki/Model-specific_register" target="_blank">MSR</a> to <code>0xC0000080</code>:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">First of all we need to set the <code>EFER.LME</code> flag in the <a href="http://en.wikipedia.org/wiki/Model-specific_register" target="_blank">MSR</a> to <code>0xC0000080</code>:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    movl    $MSR_EFER, %ecx
 rdmsr
 btsl    $_EFER_LME, %eax
 wrmsr
 </code></pre>
-<p class="comments-section">Here we put the <code>MSR_EFER</code> flag (which is defined in <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/include/asm/msr-index.h" target="_blank">arch/x86/include/asm/msr-index.h</a>) in the <code>ecx</code> register and execute the <code>rdmsr</code> instruction which reads the <a href="http://en.wikipedia.org/wiki/Model-specific_register" target="_blank">MSR</a> register. After <code>rdmsr</code> executes, the resulting data is stored in <code>edx:eax</code> according to the <code>MSR</code> register specified in <code>ecx</code>. We check the <code>EFER_LME</code> bit with the <code>btsl</code> instruction and write data from <code>edx:eax</code> back to the <code>MSR</code> register with the <code>wrmsr</code> instruction.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">In the next step, we push the address of the kernel segment code to the stack (we defined it in the GDT) and put the address of the <code>startup_64</code> routine in <code>eax</code>.<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Here we put the <code>MSR_EFER</code> flag (which is defined in <a href="https://github.com/torvalds/linux/blob/v4.16/arch/x86/include/asm/msr-index.h" target="_blank">arch/x86/include/asm/msr-index.h</a>) in the <code>ecx</code> register and execute the <code>rdmsr</code> instruction which reads the <a href="http://en.wikipedia.org/wiki/Model-specific_register" target="_blank">MSR</a> register. After <code>rdmsr</code> executes, the resulting data is stored in <code>edx:eax</code> according to the <code>MSR</code> register specified in <code>ecx</code>. We check the <code>EFER_LME</code> bit with the <code>btsl</code> instruction and write data from <code>edx:eax</code> back to the <code>MSR</code> register with the <code>wrmsr</code> instruction.<div class="comments-icon"></div></p>
+<p class="comments-section">In the next step, we push the address of the kernel segment code to the stack (we defined it in the GDT) and put the address of the <code>startup_64</code> routine in <code>eax</code>.<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    pushl    $__KERNEL_CS
 leal    startup_64(%ebp), %eax
 </code></pre>
-<p class="comments-section">After this we push <code>eax</code> to the stack and enable paging by setting the <code>PG</code> and <code>PE</code> bits in the <code>cr0</code> register:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">After this we push <code>eax</code> to the stack and enable paging by setting the <code>PG</code> and <code>PE</code> bits in the <code>cr0</code> register:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    pushl    %eax
 movl    $(X86_CR0_PG | X86_CR0_PE), %eax
 movl    %eax, %cr0
 </code></pre>
-<p class="comments-section">We then execute the <code>lret</code> instruction:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">We then execute the <code>lret</code> instruction:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">lret
 </code></pre>
-<p class="comments-section">Remember that we pushed the address of the <code>startup_64</code> function to the stack in the previous step. The CPU extracts <code>startup_64</code>'s address from the stack and jumps there.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">After all of these steps we're finally in 64-bit mode:<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">Remember that we pushed the address of the <code>startup_64</code> function to the stack in the previous step. The CPU extracts <code>startup_64</code>'s address from the stack and jumps there.<div class="comments-icon"></div></p>
+<p class="comments-section">After all of these steps we're finally in 64-bit mode:<div class="comments-icon"></div></p>
 <pre><code class="lang-assembly">    .code64
 .org 0x200
 ENTRY(startup_64)
@@ -451,11 +451,11 @@ ENTRY(startup_64)
 ....
 ....
 </code></pre>
-<p class="comments-section">That's all!<div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">That's all!<div class="comments-icon"></div></p>
 <h2 id="conclusion">Conclusion</h2>
-<p class="comments-section">This is the end of the fourth part of the linux kernel booting process. If you have any questions or suggestions, ping me on twitter <a href="https://twitter.com/0xAX" target="_blank">0xAX</a>, drop me an <a href="anotherworldofworld@gmail.com">email</a> or just create an <a href="https://github.com/0xAX/linux-insides/issues/new" target="_blank">issue</a>.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section">In the next part, we will learn about many things, including how kernel decompression works.<div class="comments-icon"><div class="marker">+</div></div></p>
-<p class="comments-section"><strong>Please note that English is not my first language and I am really sorry for any inconvenience. If you find any mistakes please send a PR to <a href="https://github.com/0xAX/linux-internals" target="_blank">linux-insides</a>.</strong><div class="comments-icon"><div class="marker">+</div></div></p>
+<p class="comments-section">This is the end of the fourth part of the linux kernel booting process. If you have any questions or suggestions, ping me on twitter <a href="https://twitter.com/0xAX" target="_blank">0xAX</a>, drop me an <a href="anotherworldofworld@gmail.com">email</a> or just create an <a href="https://github.com/0xAX/linux-insides/issues/new" target="_blank">issue</a>.<div class="comments-icon"></div></p>
+<p class="comments-section">In the next part, we will learn about many things, including how kernel decompression works.<div class="comments-icon"></div></p>
+<p class="comments-section"><strong>Please note that English is not my first language and I am really sorry for any inconvenience. If you find any mistakes please send a PR to <a href="https://github.com/0xAX/linux-internals" target="_blank">linux-insides</a>.</strong><div class="comments-icon"></div></p>
 <h2 id="links">Links</h2>
 <ul>
 <li><a href="http://en.wikipedia.org/wiki/Protected_mode" target="_blank">Protected mode</a></li>
@@ -472,7 +472,7 @@ ENTRY(startup_64)
 </ul>
 
         
-        </section>
+</section>
 
 <script type="text/javascript">
 // script for pre overflow scroll, mouse scroll to horizon
