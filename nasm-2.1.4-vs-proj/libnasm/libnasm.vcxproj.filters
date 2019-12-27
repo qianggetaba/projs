@@ -1,0 +1,283 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="源文件\stdlib">
+      <UniqueIdentifier>{63a7d1cb-c7d4-47fa-8b07-dff2bb07ab27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\nasmlib">
+      <UniqueIdentifier>{02b300e2-877f-463c-84fa-49fd3b83e171}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\common">
+      <UniqueIdentifier>{8a7df9ad-04b1-471d-b456-079fdf9e133c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\x86">
+      <UniqueIdentifier>{beb4211d-0cab-4c98-9d6c-4275269750d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\asm">
+      <UniqueIdentifier>{ccdc6b19-2b9d-41bc-9f7f-ff03ab8de9d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\macros">
+      <UniqueIdentifier>{40261200-8421-46e6-9d77-0cdd19278468}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\output">
+      <UniqueIdentifier>{3874d1da-910a-4af9-a383-af42538def38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\disasm">
+      <UniqueIdentifier>{712b2579-370c-4727-a91b-b979a17490bb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\stdlib\snprintf.c">
+      <Filter>源文件\stdlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\stdlib\strlcpy.c">
+      <Filter>源文件\stdlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\stdlib\strnlen.c">
+      <Filter>源文件\stdlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\stdlib\strrchrnul.c">
+      <Filter>源文件\stdlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\stdlib\vsnprintf.c">
+      <Filter>源文件\stdlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\crc64.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\malloc.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\ver.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\file.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\ilog2.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\md5c.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\mmap.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\string.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\filename.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\path.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\realpath.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\srcfile.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\bsi.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\readnum.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\zerobuf.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\badenum.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\hashtbl.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\perfhash.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\raa.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\rbtree.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\saa.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nasmlib\strlist.c">
+      <Filter>源文件\nasmlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\common.c">
+      <Filter>源文件\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\x86\disp8.c">
+      <Filter>源文件\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\x86\iflag.c">
+      <Filter>源文件\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\x86\insnsa.c">
+      <Filter>源文件\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\x86\insnsb.c">
+      <Filter>源文件\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\x86\insnsd.c">
+      <Filter>源文件\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\x86\insnsn.c">
+      <Filter>源文件\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\x86\regdis.c">
+      <Filter>源文件\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\x86\regflags.c">
+      <Filter>源文件\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\x86\regs.c">
+      <Filter>源文件\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\x86\regvals.c">
+      <Filter>源文件\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\assemble.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\directbl.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\error.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\float.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\labels.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\parser.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\pragma.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\eval.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\exprdump.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\exprlib.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\listing.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\pptok.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\preproc.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\preproc-nop.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\quote.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\rdstrnum.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\segalloc.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\stdscan.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\strfunc.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\tokhash.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\macros\macros.c">
+      <Filter>源文件\macros</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\legacy.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\nulldbg.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\nullout.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outaout.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outas86.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outbin.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outcoff.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outelf.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outform.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outlib.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outobj.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outrdf2.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\strtbl.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\codeview.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outdbg.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outieee.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\output\outmacho.c">
+      <Filter>源文件\output</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\disasm\disasm.c">
+      <Filter>源文件\disasm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\disasm\sync.c">
+      <Filter>源文件\disasm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asm\directiv.c">
+      <Filter>源文件\asm</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

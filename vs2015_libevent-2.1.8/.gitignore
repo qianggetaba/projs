@@ -1,0 +1,8 @@
+#vs stuff
+Debug
+*/Debug
+Release
+*/Release
+.vs
+*.db
+*.opendb
